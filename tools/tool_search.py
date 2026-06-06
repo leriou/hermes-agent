@@ -278,12 +278,20 @@ class CatalogEntry:
 
 
 _TOKEN_RE = re.compile(r"[A-Za-z0-9]+")
+_CJK_RE = re.compile(r"[\u4e00-\u9fff]")
 
 
 def _tokenize(text: str) -> List[str]:
     if not text:
         return []
-    return [t.lower() for t in _TOKEN_RE.findall(text)]
+    tokens = [t.lower() for t in _TOKEN_RE.findall(text)]
+    # CJK bigram tokenization (e.g. "持仓管理" → ["持仓", "仓管", "管理"])
+    cjk_chars = _CJK_RE.findall(text)
+    for i in range(len(cjk_chars) - 1):
+        tokens.append(cjk_chars[i] + cjk_chars[i + 1])
+    if not tokens and len(cjk_chars) == 1:
+        tokens.append(cjk_chars[0])
+    return tokens
 
 
 def _entry_search_text(td: Dict[str, Any]) -> str:
